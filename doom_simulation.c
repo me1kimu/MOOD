@@ -7,6 +7,7 @@
 #include <time.h>
 #include <math.h>
 #include <stdbool.h>
+#include <limits.h>
 
 #define MAX_PATH_LENGTH 100
 #define MAX_MONSTERS 50
@@ -76,6 +77,7 @@ void monster_attack_hero(Monster *monster, Hero *hero);
 void alert_nearby_monsters(Monster *alerting_monster);
 bool check_monster_sees_hero(Monster *monster);
 Coords get_closest_hero_position(Monster *monster);
+Hero* get_closest_hero(Monster *monster);
 
 // Calculate Manhattan distance between two points
 int manhattan_distance(Coords a, Coords b) {
@@ -148,10 +150,15 @@ void parse_config_file(const char *filename) {
             sscanf(line, "HERO_%d_HP %d", &hero_id, &hp);
             
             int idx = hero_id - 1;
+            if (idx < 0 || idx >= MAX_HEROES) {
+                fprintf(stderr, "Error: HERO_ID %d out of bounds (max %d heroes)\n", hero_id, MAX_HEROES);
+                fclose(file);
+                exit(1);
+            }
             if (idx >= sim_state.hero_count) {
                 sim_state.hero_count = idx + 1;
             }
-            sim_state.heroes[idx].id = idx;
+            sim_state.heroes[idx].id = hero_id;
             sim_state.heroes[idx].hp = hp;
             sim_state.heroes[idx].is_alive = true;
             sim_state.heroes[idx].in_combat = false;
@@ -159,38 +166,50 @@ void parse_config_file(const char *filename) {
         else if (strstr(line, "HERO_") != NULL && strstr(line, "_ATTACK_DAMAGE") != NULL) {
             int hero_id, damage;
             sscanf(line, "HERO_%d_ATTACK_DAMAGE %d", &hero_id, &damage);
-            sim_state.heroes[hero_id - 1].attack_damage = damage;
+            int idx = hero_id - 1;
+            if (idx >= 0 && idx < MAX_HEROES) {
+                sim_state.heroes[idx].attack_damage = damage;
+            }
         }
         else if (strstr(line, "HERO_") != NULL && strstr(line, "_ATTACK_RANGE") != NULL) {
             int hero_id, range;
             sscanf(line, "HERO_%d_ATTACK_RANGE %d", &hero_id, &range);
-            sim_state.heroes[hero_id - 1].attack_range = range;
+            int idx = hero_id - 1;
+            if (idx >= 0 && idx < MAX_HEROES) {
+                sim_state.heroes[idx].attack_range = range;
+            }
         }
         else if (strstr(line, "HERO_") != NULL && strstr(line, "_START") != NULL) {
             int hero_id, x, y;
             sscanf(line, "HERO_%d_START %d %d", &hero_id, &x, &y);
-            sim_state.heroes[hero_id - 1].start.x = x;
-            sim_state.heroes[hero_id - 1].start.y = y;
-            sim_state.heroes[hero_id - 1].current.x = x;
-            sim_state.heroes[hero_id - 1].current.y = y;
+            int idx = hero_id - 1;
+            if (idx >= 0 && idx < MAX_HEROES) {
+                sim_state.heroes[idx].start.x = x;
+                sim_state.heroes[idx].start.y = y;
+                sim_state.heroes[idx].current.x = x;
+                sim_state.heroes[idx].current.y = y;
+            }
         }
         else if (strstr(line, "HERO_") != NULL && strstr(line, "_PATH") != NULL) {
             int hero_id;
             sscanf(line, "HERO_%d_PATH", &hero_id);
+            int idx = hero_id - 1;
             
-            Hero *hero = &sim_state.heroes[hero_id - 1];
-            hero->path_length = 0;
-            hero->path_index = 0;
-            
-            char *ptr = strchr(line, '(');
-            while (ptr != NULL) {
-                int x, y;
-                if (sscanf(ptr, "(%d,%d)", &x, &y) == 2) {
-                    hero->path[hero->path_length].x = x;
-                    hero->path[hero->path_length].y = y;
-                    hero->path_length++;
+            if (idx >= 0 && idx < MAX_HEROES) {
+                Hero *hero = &sim_state.heroes[idx];
+                hero->path_length = 0;
+                hero->path_index = 0;
+                
+                char *ptr = strchr(line, '(');
+                while (ptr != NULL) {
+                    int x, y;
+                    if (sscanf(ptr, "(%d,%d)", &x, &y) == 2) {
+                        hero->path[hero->path_length].x = x;
+                        hero->path[hero->path_length].y = y;
+                        hero->path_length++;
+                    }
+                    ptr = strchr(ptr + 1, '(');
                 }
-                ptr = strchr(ptr + 1, '(');
             }
         }
         else if (strncmp(line, "MONSTER_COUNT", 13) == 0) {
@@ -205,6 +224,11 @@ void parse_config_file(const char *filename) {
             
             // Initialize monster if needed
             int idx = monster_id - 1;
+            if (idx < 0 || idx >= MAX_MONSTERS) {
+                fprintf(stderr, "Error: MONSTER_ID %d out of bounds (max %d monsters)\n", monster_id, MAX_MONSTERS);
+                fclose(file);
+                exit(1);
+            }
             if (idx >= sim_state.monster_count) {
                 sim_state.monster_count = idx + 1;
             }
@@ -216,25 +240,37 @@ void parse_config_file(const char *filename) {
         else if (strstr(line, "MONSTER_") != NULL && strstr(line, "_ATTACK_DAMAGE") != NULL) {
             int monster_id, damage;
             sscanf(line, "MONSTER_%d_ATTACK_DAMAGE %d", &monster_id, &damage);
-            sim_state.monsters[monster_id - 1].attack_damage = damage;
+            int idx = monster_id - 1;
+            if (idx >= 0 && idx < MAX_MONSTERS) {
+                sim_state.monsters[idx].attack_damage = damage;
+            }
         }
         else if (strstr(line, "MONSTER_") != NULL && strstr(line, "_VISION_RANGE") != NULL) {
             int monster_id, range;
             sscanf(line, "MONSTER_%d_VISION_RANGE %d", &monster_id, &range);
-            sim_state.monsters[monster_id - 1].vision_range = range;
+            int idx = monster_id - 1;
+            if (idx >= 0 && idx < MAX_MONSTERS) {
+                sim_state.monsters[idx].vision_range = range;
+            }
         }
         else if (strstr(line, "MONSTER_") != NULL && strstr(line, "_ATTACK_RANGE") != NULL) {
             int monster_id, range;
             sscanf(line, "MONSTER_%d_ATTACK_RANGE %d", &monster_id, &range);
-            sim_state.monsters[monster_id - 1].attack_range = range;
+            int idx = monster_id - 1;
+            if (idx >= 0 && idx < MAX_MONSTERS) {
+                sim_state.monsters[idx].attack_range = range;
+            }
         }
         else if (strstr(line, "MONSTER_") != NULL && strstr(line, "_COORDS") != NULL) {
             int monster_id, x, y;
             sscanf(line, "MONSTER_%d_COORDS %d %d", &monster_id, &x, &y);
-            sim_state.monsters[monster_id - 1].start.x = x;
-            sim_state.monsters[monster_id - 1].start.y = y;
-            sim_state.monsters[monster_id - 1].current.x = x;
-            sim_state.monsters[monster_id - 1].current.y = y;
+            int idx = monster_id - 1;
+            if (idx >= 0 && idx < MAX_MONSTERS) {
+                sim_state.monsters[idx].start.x = x;
+                sim_state.monsters[idx].start.y = y;
+                sim_state.monsters[idx].current.x = x;
+                sim_state.monsters[idx].current.y = y;
+            }
         }
     }
 
@@ -252,6 +288,24 @@ Coords get_closest_hero_position(Monster *monster) {
             if (dist < min_distance) {
                 min_distance = dist;
                 closest = sim_state.heroes[i].current;
+            }
+        }
+    }
+    
+    return closest;
+}
+
+// Get the closest hero pointer to a monster (returns NULL if no heroes alive)
+Hero* get_closest_hero(Monster *monster) {
+    Hero *closest = NULL;
+    int min_distance = INT_MAX;
+    
+    for (int i = 0; i < sim_state.hero_count; i++) {
+        if (sim_state.heroes[i].is_alive) {
+            int dist = manhattan_distance(monster->current, sim_state.heroes[i].current);
+            if (dist < min_distance) {
+                min_distance = dist;
+                closest = &sim_state.heroes[i];
             }
         }
     }
@@ -324,10 +378,8 @@ void move_hero(Hero *hero) {
     }
 }
 
-// Hero attacks monsters in range
+// Hero attacks monsters in range (assumes mutex is already locked)
 void hero_attack_monsters(Hero *hero) {
-    pthread_mutex_lock(&sim_state.simulation_mutex);
-    
     bool monsters_in_range = false;
     
     for (int i = 0; i < sim_state.monster_count; i++) {
@@ -348,13 +400,10 @@ void hero_attack_monsters(Hero *hero) {
     }
     
     hero->in_combat = monsters_in_range;
-    pthread_mutex_unlock(&sim_state.simulation_mutex);
 }
 
-// Monster attacks closest hero
+// Monster attacks closest hero (assumes mutex is already locked)
 void monster_attack_hero(Monster *monster, Hero *target_hero) {
-    pthread_mutex_lock(&sim_state.simulation_mutex);
-    
     if (target_hero->is_alive) {
         int dist = manhattan_distance(monster->current, target_hero->current);
         if (dist <= monster->attack_range) {
@@ -368,8 +417,6 @@ void monster_attack_hero(Monster *monster, Hero *target_hero) {
             }
         }
     }
-    
-    pthread_mutex_unlock(&sim_state.simulation_mutex);
 }
 
 // Hero thread function
@@ -379,8 +426,16 @@ void* hero_thread_function(void* arg) {
     printf("Hero %d starting at (%d, %d) with %d HP\n", 
            hero->id, hero->current.x, hero->current.y, hero->hp);
     
-    while (sim_state.simulation_running && hero->is_alive) {
+    bool running = true;
+    while (running && hero->is_alive) {
         pthread_mutex_lock(&sim_state.simulation_mutex);
+        
+        // Check simulation_running flag while holding mutex
+        running = sim_state.simulation_running;
+        if (!running) {
+            pthread_mutex_unlock(&sim_state.simulation_mutex);
+            break;
+        }
         
         // Check if there are monsters in attack range
         bool monsters_nearby = false;
@@ -396,18 +451,17 @@ void* hero_thread_function(void* arg) {
         
         if (monsters_nearby) {
             hero->in_combat = true;
-            pthread_mutex_unlock(&sim_state.simulation_mutex);
             hero_attack_monsters(hero);
+            pthread_mutex_unlock(&sim_state.simulation_mutex);
         } else {
             hero->in_combat = false;
-            pthread_mutex_unlock(&sim_state.simulation_mutex);
             
             // Move along path if not at end
             if (hero->path_index < hero->path_length) {
-                pthread_mutex_lock(&sim_state.simulation_mutex);
                 move_hero(hero);
                 pthread_mutex_unlock(&sim_state.simulation_mutex);
             } else {
+                pthread_mutex_unlock(&sim_state.simulation_mutex);
                 // Reached end of path
                 printf("Hero %d reached the end of the path!\n", hero->id);
                 break;
@@ -431,8 +485,16 @@ void* monster_thread_function(void* arg) {
     printf("Monster %d starting at (%d, %d) with %d HP\n",
            monster->id, monster->current.x, monster->current.y, monster->hp);
     
-    while (sim_state.simulation_running && monster->is_alive) {
+    bool running = true;
+    while (running && monster->is_alive) {
         pthread_mutex_lock(&sim_state.simulation_mutex);
+        
+        // Check simulation_running flag while holding mutex
+        running = sim_state.simulation_running;
+        if (!running) {
+            pthread_mutex_unlock(&sim_state.simulation_mutex);
+            break;
+        }
         
         // Check if hero is in vision range or if alerted
         bool hero_detected = check_monster_sees_hero(monster);
@@ -442,45 +504,29 @@ void* monster_thread_function(void* arg) {
             printf("Monster %d spotted a hero!\n", monster->id);
             pthread_mutex_unlock(&sim_state.simulation_mutex);
             alert_nearby_monsters(monster);
-        } else {
-            pthread_mutex_unlock(&sim_state.simulation_mutex);
+            pthread_mutex_lock(&sim_state.simulation_mutex);
         }
         
         if (monster->is_alerted) {
-            // Find closest hero
-            pthread_mutex_lock(&sim_state.simulation_mutex);
-            Hero *closest_hero = NULL;
-            int min_dist = INT_MAX;
-            
-            for (int i = 0; i < sim_state.hero_count; i++) {
-                if (sim_state.heroes[i].is_alive) {
-                    int dist = manhattan_distance(monster->current, sim_state.heroes[i].current);
-                    if (dist < min_dist) {
-                        min_dist = dist;
-                        closest_hero = &sim_state.heroes[i];
-                    }
-                }
-            }
+            // Find closest hero using helper function
+            Hero *closest_hero = get_closest_hero(monster);
             
             if (closest_hero != NULL) {
-                Coords target = closest_hero->current;
-                pthread_mutex_unlock(&sim_state.simulation_mutex);
+                int min_dist = manhattan_distance(monster->current, closest_hero->current);
                 
                 // Attack if in range, otherwise move closer
                 if (min_dist <= monster->attack_range) {
                     monster_attack_hero(monster, closest_hero);
                 } else {
-                    pthread_mutex_lock(&sim_state.simulation_mutex);
+                    Coords target = closest_hero->current;
                     move_monster_towards_hero(monster, target);
                     printf("Monster %d moved to (%d, %d) (chasing hero)\n",
                            monster->id, monster->current.x, monster->current.y);
-                    pthread_mutex_unlock(&sim_state.simulation_mutex);
                 }
-            } else {
-                pthread_mutex_unlock(&sim_state.simulation_mutex);
             }
         }
         
+        pthread_mutex_unlock(&sim_state.simulation_mutex);
         sleep(1); // 1 second delay
     }
     

@@ -153,7 +153,7 @@ El código está estructurado de la siguiente manera:
 ## Notas de Implementación
 
 - La distancia de Manhattan se usa para el pathfinding de los monstruos
-- Los delays de 0.5 segundos entre acciones hacen la simulación más visible
+- Los delays de 1 segundo entre acciones hacen la simulación más visible
 - Los mutexes previenen condiciones de carrera en el acceso al estado compartido
 - Los monstruos priorizan moverse en la dirección que más reduce la distancia Manhattan
 
