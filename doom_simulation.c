@@ -526,7 +526,7 @@ int main(int argc, char *argv[]) {
 
     // Create hero threads
     for (int i = 0; i < sim_state.hero_count; i++) {
-        pthread_create(&sim_state.heroes[i].thread, NULL, hero_thread_function, &sim_state.heroes[i]);
+        if (pthread_create(&sim_state.heroes[i].thread, NULL, hero_thread_function, &sim_state.heroes[i]) != 0) { fprintf(stderr, "Error creating hero thread %d\n", i); exit(1); }
     }
 
     // Create monster threads
