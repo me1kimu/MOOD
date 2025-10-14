@@ -32,10 +32,26 @@ O use el comando make:
 make run
 ```
 
+### Archivos de Configuración Incluidos
+
+El repositorio incluye tres archivos de configuración de ejemplo:
+
+1. **config_example.txt** - Escenario básico con 1 héroe y 3 monstruos (del PDF)
+2. **config_multi_hero.txt** - Escenario avanzado con 2 héroes y 5 monstruos (extensión de 15 puntos)
+3. **config_hard.txt** - Escenario difícil donde el héroe puede morir enfrentando 4 monstruos
+
+Puede ejecutar cualquiera de ellos:
+```bash
+./doom_simulation config_example.txt
+./doom_simulation config_multi_hero.txt
+./doom_simulation config_hard.txt
+```
+
 ## Formato del Archivo de Configuración
 
 El archivo de configuración debe seguir este formato:
 
+### Para Un Solo Héroe (Formato Original - 45 puntos):
 ```
 GRID_SIZE <ancho> <alto>
 HERO_HP <vida_inicial>
@@ -43,6 +59,23 @@ HERO_ATTACK_DAMAGE <daño_ataque>
 HERO_ATTACK_RANGE <rango_ataque>
 HERO_START <x> <y>
 HERO_PATH (x1,y1) (x2,y2) (x3,y3) ...
+MONSTER_COUNT <número_monstruos>
+MONSTER_<id>_HP <vida>
+MONSTER_<id>_ATTACK_DAMAGE <daño>
+MONSTER_<id>_VISION_RANGE <rango_visión>
+MONSTER_<id>_ATTACK_RANGE <rango_ataque>
+MONSTER_<id>_COORDS <x> <y>
+```
+
+### Para Múltiples Héroes (Extensión - 15 puntos):
+```
+GRID_SIZE <ancho> <alto>
+HERO_COUNT <número_héroes>
+HERO_<id>_HP <vida_inicial>
+HERO_<id>_ATTACK_DAMAGE <daño_ataque>
+HERO_<id>_ATTACK_RANGE <rango_ataque>
+HERO_<id>_START <x> <y>
+HERO_<id>_PATH (x1,y1) (x2,y2) (x3,y3) ...
 MONSTER_COUNT <número_monstruos>
 MONSTER_<id>_HP <vida>
 MONSTER_<id>_ATTACK_DAMAGE <daño>
