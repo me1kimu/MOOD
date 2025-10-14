@@ -450,7 +450,7 @@ void* monster_thread_function(void* arg) {
             // Find closest hero
             pthread_mutex_lock(&sim_state.simulation_mutex);
             Hero *closest_hero = NULL;
-            int min_dist = 999999;
+            int min_dist = INT_MAX;
             
             for (int i = 0; i < sim_state.hero_count; i++) {
                 if (sim_state.heroes[i].is_alive) {
