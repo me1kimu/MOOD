@@ -99,7 +99,7 @@ void parse_config_file(const char *filename) {
         line[strcspn(line, "\n")] = 0;
         
         if (strncmp(line, "GRID_SIZE", 9) == 0) {
-            sscanf(line, "GRID_SIZE %d %d", &sim_state.grid_width, &sim_state.grid_height);
+            if (sscanf(line, "GRID_SIZE %d %d", &sim_state.grid_width, &sim_state.grid_height) != 2) { fprintf(stderr, "Error: Malformed GRID_SIZE line.\n"); exit(1); }
         }
         else if (strncmp(line, "HERO_COUNT", 10) == 0) {
             // Just for information, we'll count as we parse
