@@ -1,0 +1,15 @@
+# Compiled binary
+doom_simulation
+
+# Object files
+*.o
+
+# Temporary files
+*.tmp
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
