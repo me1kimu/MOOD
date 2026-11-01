@@ -263,7 +263,12 @@ void parse_config_file(const char *filename) {
         }
         else if (strstr(line, "MONSTER_") != NULL && strstr(line, "_COORDS") != NULL) {
             int monster_id, x, y;
-            sscanf(line, "MONSTER_%d_COORDS %d %d", &monster_id, &x, &y);
+            int parsed = sscanf(line, "MONSTER_%d_COORDS %d %d", &monster_id, &x, &y);
+            if (parsed != 3) {
+                fprintf(stderr, "Error: Invalid MONSTER_COORDS entry: %s", line);
+                fclose(file);
+                exit(1);
+            }
             int idx = monster_id - 1;
             if (idx >= 0 && idx < MAX_MONSTERS) {
                 sim_state.monsters[idx].start.x = x;
